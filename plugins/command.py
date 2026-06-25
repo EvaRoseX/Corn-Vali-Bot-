@@ -137,7 +137,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif data == "get":
         buttons = [
-            [InlineKeyboardButton('• 𝖢記錄𝗌𝖾 •', callback_data='close_data')]
+            [InlineKeyboardButton('• 𝖢𝗅𝗈𝗌𝖾 •', callback_data='close_data')]
         ]
         await query.message.reply_photo(
             photo=QR_CODE_IMAGE,
