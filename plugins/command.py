@@ -50,13 +50,11 @@ async def start_command(client, message: Message):
             print(f"Referral Error: {e}")
 
     # --------------------------------------------------------
-    # 🔥 SAFE DEEP LINKING RESOLVER (Handles unique_id flawlessly)
+    # 🔥 SAFE DEEP LINKING RESOLVER
     # --------------------------------------------------------
     if argument:
-        # 'avx-' prefix ko clean karke database compatible unique_id nikalna
         search_id = argument.replace("avx-", "")
         try:
-            # Yeh aapke default repo framework ke through files fetch karke send karega
             await send_requested_file(client, message, user_id, search_id)
             return
         except Exception as e:
@@ -139,7 +137,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif data == "get":
         buttons = [
-            [InlineKeyboardButton('• 𝖢𝗅𝗈𝗌𝖾 •', callback_data='close_data')]
+            [InlineKeyboardButton('• 𝖢記錄𝗌𝖾 •', callback_data='close_data')]
         ]
         await query.message.reply_photo(
             photo=QR_CODE_IMAGE,
