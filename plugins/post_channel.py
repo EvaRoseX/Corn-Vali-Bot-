@@ -9,10 +9,9 @@ from utils import temp, get_shortlink, generate_weird_name, generate_thumbnail
 # Global flag to control auto posting loop
 AUTO_POST_RUNNING = False
 
-# Kuch sample banner images ke URLs jo aap randomized dikhana chahte hain (Agar video thumb na mile)
+# Fresh working telegraph banner image link
 RANDOM_THUMBNAILS = [
-    "https://graph.org/file/your_image_id_1.jpg", 
-    "https://graph.org/file/your_image_id_2.jpg"
+    "https://telegra.ph/file/0c9ef00f6828bc45b95be.jpg"
 ]
 
 # -----------------------
@@ -48,7 +47,6 @@ async def index_normal_videos(client, m: Message):
             me = await client.get_me()
             temp.U_NAME = me.username
 
-        # Standard secure format for new uploads
         link = f"https://t.me/{temp.U_NAME}?start=avx-{file_unique_id}"
 
         if POST_SHORTLINK:
@@ -81,7 +79,7 @@ async def index_normal_videos(client, m: Message):
         print(f"❌ Error in Auto Index: {e}")
 
 # =================================================
-# 🤖 AUTOMATED BACKGROUND POSTING TASK
+# 🤖 AUTOMATED BACKGROUND POSTING TASK (FIXED)
 # =================================================
 async def auto_post_loop(client: Client):
     global AUTO_POST_RUNNING
@@ -97,7 +95,6 @@ async def auto_post_loop(client: Client):
                     me = await client.get_me()
                     temp.U_NAME = me.username
                 
-                # Safe, short and valid deep link format (Telegram limits compatible)
                 link = f"https://t.me/{temp.U_NAME}?start=avx-{video_id}"
                 
                 if POST_SHORTLINK:
@@ -106,7 +103,6 @@ async def auto_post_loop(client: Client):
                 else:
                     shortlink = link
                 
-                # Premium stylized layout matching your visual branding
                 caption = (
                     "🔥 <b>𝜝𝜸𝜸𝜾 𝜨𝜺𝝯 𝜠𝝴𝝭𝝾𝞄𝞇𝝸𝝯𝝴 𝜢𝝥𝝳𝝰𝞃𝝴</b> 🔥\n\n"
                     "📂 <b>Category:</b> FOREIGN\n"
@@ -118,16 +114,26 @@ async def auto_post_loop(client: Client):
                 btn = InlineKeyboardMarkup([[InlineKeyboardButton("🚀 WATCH NOW", url=shortlink)]])
                 photo_banner = random.choice(RANDOM_THUMBNAILS) if RANDOM_THUMBNAILS else NO_IMG
                 
-                await client.send_photo(
-                    chat_id=POST_CHANNEL,
-                    photo=photo_banner,
-                    caption=caption,
-                    reply_markup=btn
-                )
-                print("📢 [Auto-Post] Successfully posted a random video to channel.")
+                # --- CRASH PROOF SEND LOGIC ---
+                try:
+                    await client.send_photo(
+                        chat_id=POST_CHANNEL,
+                        photo=photo_banner,
+                        caption=caption,
+                        reply_markup=btn
+                    )
+                    print("📢 [Auto-Post] Successfully posted with thumbnail.")
+                except Exception as img_err:
+                    print(f"⚠️ [Image Failed]: {img_err} | Sending as text now...")
+                    # Agar link kharab bhi ho jaye, toh direct text format me post chala jayega!
+                    await client.send_message(
+                        chat_id=POST_CHANNEL,
+                        text=caption,
+                        reply_markup=btn
+                    )
             
-            # ⏱️ Har 15 minute (900 seconds) me post karega. Aap apne hisab se badal sakte hain.
-            await asyncio.sleep(15)
+            # ⏱️ Har 15 minute (900 seconds) me post karega.
+            await asyncio.sleep(900)
             
         except Exception as e:
             print(f"⚠️ [Auto-Post Error]: {e}")
