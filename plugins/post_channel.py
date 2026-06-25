@@ -11,8 +11,8 @@ AUTO_POST_RUNNING = False
 
 # Kuch sample banner images ke URLs jo aap randomized dikhana chahte hain (Agar video thumb na mile)
 RANDOM_THUMBNAILS = [
-    "https://i.ibb.co/mFz1FFwr/photo-2026-06-25-15-46-41-7655360050671648772.jpg", 
-    "https://i.ibb.co/RpYsNR4m/photo-2026-06-25-15-44-44-7655360059261583380.jpg"
+    "https://graph.org/file/your_image_id_1.jpg", 
+    "https://graph.org/file/your_image_id_2.jpg"
 ]
 
 # -----------------------
@@ -48,6 +48,7 @@ async def index_normal_videos(client, m: Message):
             me = await client.get_me()
             temp.U_NAME = me.username
 
+        # Standard secure format for new uploads
         link = f"https://t.me/{temp.U_NAME}?start=avx-{file_unique_id}"
 
         if POST_SHORTLINK:
@@ -88,7 +89,7 @@ async def auto_post_loop(client: Client):
     
     while AUTO_POST_RUNNING:
         try:
-            # 1. Database se random video fetch karo
+            # Database se ek random video ka unique_id fetch karein
             video_id = await db.get_random_video()
             
             if video_id:
@@ -96,9 +97,8 @@ async def auto_post_loop(client: Client):
                     me = await client.get_me()
                     temp.U_NAME = me.username
                 
-                # Link format matching your start handler (avx- uniquely identifying it)
-                # If your get_random_video returns file_id, pass that, or modify accordingly.
-                link = f"https://t.me/{temp.U_NAME}?start={video_id}"
+                # Safe, short and valid deep link format (Telegram limits compatible)
+                link = f"https://t.me/{temp.U_NAME}?start=avx-{video_id}"
                 
                 if POST_SHORTLINK:
                     try: shortlink = await get_shortlink(link)
@@ -106,7 +106,7 @@ async def auto_post_loop(client: Client):
                 else:
                     shortlink = link
                 
-                # 2. Perfect style caption
+                # Premium stylized layout matching your visual branding
                 caption = (
                     "🔥 <b>𝜝𝜸𝜸𝜾 𝜨𝜺𝝯 𝜠𝝴𝝭𝝾𝞄𝞇𝝸𝝯𝝴 𝜢𝝥𝝳𝝰𝞃𝝴</b> 🔥\n\n"
                     "📂 <b>Category:</b> FOREIGN\n"
@@ -116,11 +116,8 @@ async def auto_post_loop(client: Client):
                 )
                 
                 btn = InlineKeyboardMarkup([[InlineKeyboardButton("🚀 WATCH NOW", url=shortlink)]])
-                
-                # Random thumbnail url pick karo banner ke liye
                 photo_banner = random.choice(RANDOM_THUMBNAILS) if RANDOM_THUMBNAILS else NO_IMG
                 
-                # 3. Channel me post send karo
                 await client.send_photo(
                     chat_id=POST_CHANNEL,
                     photo=photo_banner,
@@ -129,8 +126,8 @@ async def auto_post_loop(client: Client):
                 )
                 print("📢 [Auto-Post] Successfully posted a random video to channel.")
             
-            # ⏱️ Har 30 minute (1800 seconds) me post karega. Aap ise kam-zyada kar sakte hain.
-            await asyncio.sleep(600)
+            # ⏱️ Har 15 minute (900 seconds) me post karega. Aap apne hisab se badal sakte hain.
+            await asyncio.sleep(900)
             
         except Exception as e:
             print(f"⚠️ [Auto-Post Error]: {e}")
