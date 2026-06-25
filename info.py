@@ -18,7 +18,7 @@ BOT_TOKEN = environ.get("BOT_TOKEN", "")
 PORT = int(environ.get("PORT", "8080"))
 TIMEZONE = environ.get("TIMEZONE", "Asia/Kolkata")
 OWNER_USERNAME = environ.get("OWNER_USERNAME", "EvaRoseX")
-POST_CHANNEL = int(environ.get('POST_CHANNEL', '-1002707776700'))
+POST_CHANNEL = int(environ.get('POST_CHANNEL', '-1002707776700'))#isha ko kuch mat karo chhod do isha hii
 
 # =========================================================
 # 💾 DATABASE CONFIGURATION
