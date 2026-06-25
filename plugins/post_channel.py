@@ -87,15 +87,24 @@ async def auto_post_loop(client: Client):
     
     while AUTO_POST_RUNNING:
         try:
-            # Database se ek random video ka unique_id fetch karein
-            video_id = await db.get_random_video()
+            # 🔧 FIX: Database se file_unique_id nikalne ke liye hum direct pipeline use karenge
+            # Taaki hamara send_requested_file function ise aaram se dhoondh sake
+            try:
+                pipeline = [{"$sample": {"size": 1}}]
+                cursor = db.videos.aggregate(pipeline)
+                result = await cursor.to_list(length=1)
+                video_unique_id = result[0]["file_unique_id"] if result else None
+            except Exception as db_err:
+                print(f"Database fetch error: {db_err}")
+                video_unique_id = None
             
-            if video_id:
+            if video_unique_id:
                 if not temp.U_NAME:
                     me = await client.get_me()
                     temp.U_NAME = me.username
                 
-                link = f"https://t.me/{temp.U_NAME}?start=avx-{video_id}"
+                # Perfect short link format compatible with Telegram limits
+                link = f"https://t.me/{temp.U_NAME}?start=avx-{video_unique_id}"
                 
                 if POST_SHORTLINK:
                     try: shortlink = await get_shortlink(link)
@@ -114,7 +123,6 @@ async def auto_post_loop(client: Client):
                 btn = InlineKeyboardMarkup([[InlineKeyboardButton("🚀 WATCH NOW", url=shortlink)]])
                 photo_banner = random.choice(RANDOM_THUMBNAILS) if RANDOM_THUMBNAILS else NO_IMG
                 
-                # --- CRASH PROOF SEND LOGIC ---
                 try:
                     await client.send_photo(
                         chat_id=POST_CHANNEL,
@@ -125,7 +133,6 @@ async def auto_post_loop(client: Client):
                     print("📢 [Auto-Post] Successfully posted with thumbnail.")
                 except Exception as img_err:
                     print(f"⚠️ [Image Failed]: {img_err} | Sending as text now...")
-                    # Agar link kharab bhi ho jaye, toh direct text format me post chala jayega!
                     await client.send_message(
                         chat_id=POST_CHANNEL,
                         text=caption,
