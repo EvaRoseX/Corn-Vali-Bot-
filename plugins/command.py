@@ -49,11 +49,22 @@ async def start_command(client, message: Message):
         except Exception as e:
             print(f"Referral Error: {e}")
 
+    # 1️⃣ PEHLE SE MAUJOOD: Format jisme 'avx-' prefix hota hai
     if argument and argument.startswith("avx-"):
         search_id = argument.replace("avx-", "")
         await send_requested_file(client, message, user_id, search_id)
         return
 
+    # 2️⃣ NEW ADDED: Direct Auto-Post Link (Agar link bina avx- ke direct video_id ho)
+    if argument:
+        # Agar user kisi random video_id wale link par click karke aaya hai
+        try:
+            await send_requested_file(client, message, user_id, argument)
+            return
+        except Exception as e:
+            print(f"Direct Link Error: {e}")
+
+    # --- Naya user add karne ka process ---
     if not await db.is_user_exist(user_id):
         await db.add_user(user_id, message.from_user.first_name)
         try:
@@ -133,7 +144,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif data == "get":
         buttons = [
-            [InlineKeyboardButton('• 𝖢𝗅𝗈𝗌𝖾 •', callback_data='close_data')]
+            [InlineKeyboardButton('• 𝖢                    𝗅𝗈𝗌𝖾 •', callback_data='close_data')]
         ]
         await query.message.reply_photo(
             photo=QR_CODE_IMAGE,
