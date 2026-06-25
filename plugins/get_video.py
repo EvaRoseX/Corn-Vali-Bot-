@@ -41,8 +41,8 @@ async def handle_video_request(client, m: Message):
     # Message for when any absolute max limit is reached
     limit_reached_msg = (
         f"𝖸𝗈𝗎'𝗏𝖾 𝖱𝖾𝖺𝖼𝗁𝖾𝖽 𝖸𝗈𝗎𝗋 𝖣𝖺𝗂𝗅𝗒 𝖫𝗂𝗆𝗂𝗍 𝖮𝖿 {used} 𝖥𝗂𝗅𝖾𝗌.\n\n"
-        "𝖳𝗋𝗒 𝖠𝗀𝖺𝗂𝗇 𝖳𝗈𝗆𝗈𝗋𝗋𝗈𝗐!\n"
-        "𝖮𝗋 𝖯𝗎𝗋𝖼𝗁𝖺𝗌𝖾 𝖲𝗎𝖻𝗌𝖼𝗋𝗂𝗉𝗍𝗂𝗈𝗇 𝖳𝗈 𝖡𝗈𝗈𝗌𝗍 𝖸𝗈𝗎𝗋 𝖣𝖺𝗂𝗅𝗒 𝖫𝗂𝗆𝗂𝗍"
+        "𝖳𝗋𝗒 𝖠𝗀𝖺𝗂𝗇 𝖳𝗈𝗆𝗈𝗋𝗋牟𝗈𝗐!\n"
+        "𝖮𝗋 𝖯𝗎𝗋𝖼𝗁𝖺𝗌𝖾 𝖲𝗎𝖻𝗌𝖼𝗋𝗂𝗉𝗂𝗈𝗇 𝖳𝗈 𝖡𝗈𝗈𝗌𝗍 𝖸𝗈𝗎𝗋 𝖣𝖺𝗂𝗅𝗒 𝖫𝗂模𝗆𝗂𝗍"
     )
     buy_button = InlineKeyboardMarkup([
         [InlineKeyboardButton("• 𝖯𝗎𝗋𝖼𝗁𝖺𝗌𝖾 𝖲𝗎𝖻𝗌𝖼𝗋𝗂𝗉𝗍𝗂𝗈𝗇 •", callback_data="get")]
@@ -71,31 +71,32 @@ async def handle_video_request(client, m: Message):
     # ------------------------------------------------
     video_id = await db.get_unseen_video(user_id)
 
-    if not video_id:
+    # FIXED: Check if video_id is None, False, or empty string ""
+    if not video_id or str(video_id).strip() == "":
         try:
             video_id = await db.get_random_video()
         except Exception as e:
             print(f"[Random Video Error] {e}")
-            return
+            return await m.reply("❌ Error fetching a random video from database.")
 
-    if not video_id:
-        return await m.reply("❌ No videos found in the database.")
+    # FIXED: Double check after random fetch
+    if not video_id or str(video_id).strip() == "":
+        return await m.reply("❌ No valid videos found in the database. Please add files first.")
 
     # ------------------------------------------------
     # SEND VIDEO
     # ------------------------------------------------
     try:
-        # Fixed: Using client.send_video instead of m.reply_video
         sent = await client.send_video(
             chat_id=m.chat.id,
-            video=video_id,
+            video=str(video_id).strip(), # FIXED: Added strip to remove unwanted spaces
             protect_content=PROTECT_CONTENT,
             caption=(
                 f"𝘗𝘰𝘸𝘦𝘳𝘦𝘥 𝘉𝘺: {temp.B_LINK}\n\n"
                 "<blockquote>"
                 "ᴛʜɪꜱ ꜰɪʟᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ 10 ᴍɪɴᴜᴛᴇꜱ.\n"
                 "ᴘʟᴇᴀꜱᴇ ꜰᴏʀᴡᴀʀᴅ ᴛʜɪꜱ ꜰɪʟᴇ ꜱᴏᴍᴇᴡʜᴇʀᴇ ᴇʟꜱᴇ "
-                "ᴏʀ ꜱᴀᴠᴇ ɪɴ ꜱᴀᴠᴇᴅ ᴍᴇꜱꜱᴀɢᴇꜱ."
+                "ᴏʀ ꜱᴀᴠᴇ ɪɴ ꜱᴀᴠᴇ章ᴅ ᴍᴇꜱꜱᴀɢᴇꜱ."
                 "</blockquote>"
             ),
             reply_to_message_id=m.id
@@ -108,5 +109,4 @@ async def handle_video_request(client, m: Message):
         asyncio.create_task(auto_delete_message(m, sent))
 
     except Exception as e:
-        await m.reply(f"❌ Failed to send video: {str(e)}")
-        
+        await m.reply(f"❌ Failed to send video: {str(e)}\n\n⚠️ *Note:* The file ID in database might be broken/invalid.")
