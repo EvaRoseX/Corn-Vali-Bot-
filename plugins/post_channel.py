@@ -11,7 +11,7 @@ AUTO_POST_RUNNING = False
 
 # Fresh working telegraph banner image link
 RANDOM_THUMBNAILS = [
-    "https://telegra.ph/file/0c9ef00f6828bc45b95be.jpg"
+    "https://i.ibb.co/mFz1FFwr/photo-2026-06-25-15-46-41-7655360050671648772.jpg"
 ]
 
 # -----------------------
