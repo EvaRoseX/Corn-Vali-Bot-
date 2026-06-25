@@ -127,7 +127,7 @@ async def auto_post_loop(client: Client):
                 print("📢 [Auto-Post] Successfully posted a random video to channel.")
             
             # ⏱️ Har 15 minute (900 seconds) me post karega. Aap apne hisab se badal sakte hain.
-            await asyncio.sleep(900)
+            await asyncio.sleep(15)
             
         except Exception as e:
             print(f"⚠️ [Auto-Post Error]: {e}")
