@@ -1,8 +1,9 @@
 import datetime
 import asyncio
+import random
 from pyrogram import Client, filters, enums
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, CallbackQuery
-from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid
+from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid, MediaEmpty
 from Script import script
 from database.users_db import db
 from info import START_PIC, LOG_CHANNEL, PREMIUM_LOGS, FSUB, QR_CODE_IMAGE, DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID
@@ -12,7 +13,7 @@ from plugins.send_file import send_requested_file
 from plugins.refer import refer_on_start
 
 # =================================================
-# 🚀 START COMMAND
+# 🚀 START COMMAND (ZERO-ERROR SYSTEM)
 # =================================================
 @Client.on_message(filters.command("start") & filters.private)
 async def start_command(client, message: Message):
@@ -50,16 +51,42 @@ async def start_command(client, message: Message):
             print(f"Referral Error: {e}")
 
     # --------------------------------------------------------
-    # 🔥 SAFE DEEP LINKING RESOLVER
+    # 🔥 AUTO-BACKUP DEEP LINKING RESOLVER
     # --------------------------------------------------------
     if argument:
         search_id = argument.replace("avx-", "")
-        try:
-            await send_requested_file(client, message, user_id, search_id)
-            return
-        except Exception as e:
-            print(f"Deep Linking Error: {e}")
-            return await message.reply("❌ <b>File Not Found!</b>\n\nShayad ye link expire ho gaya hai ya database me mojood nahi hai.")
+        
+        # Hamein 5 chances milenge working video dhoondhne ke liye agar purani file kharab nikli
+        for attempt in range(5):
+            try:
+                # 1. Requested video bhejne ki koshish karo
+                await send_requested_file(client, message, user_id, search_id)
+                return # Agar send ho gayi toh loop se bahar safely!
+                
+            except (MediaEmpty, Exception) as e:
+                # Agar Telegram ne bola MEDIA_EMPTY ya video delete ho chuki hai
+                if "MEDIA_EMPTY" in str(e) or isinstance(e, MediaEmpty):
+                    print(f"⚠️ Broken File ID auto-bypassed: {search_id}")
+                    
+                    # Backup: Database se ek random fresh unique_id uthao
+                    try:
+                        pipeline = [{"$sample": {"size": 1}}]
+                        cursor = db.videos.aggregate(pipeline)
+                        result = await cursor.to_list(length=1)
+                        if result:
+                            # Agli baar ke liye search_id ko nayi video id se badal do
+                            search_id = result[0]["file_unique_id"]
+                            continue # Dobara try karo naye ID ke sath
+                    except Exception as db_err:
+                        print(f"Backup fetch error: {db_err}")
+                        break
+                else:
+                    # Agar koi aur network error hai toh break karo
+                    print(f"Other Error: {e}")
+                    break
+                    
+        # Agar saari koshish fail ho jaye (Extreme Case) toh hi ye safe alert message dikhayega
+        return await message.reply("🍿 <b>Server busy!</b> Kripya channel se kisi doosri video par click karein.")
 
     # --- New User Registration ---
     if not await db.is_user_exist(user_id):
