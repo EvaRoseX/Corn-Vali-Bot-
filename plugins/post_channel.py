@@ -140,7 +140,7 @@ async def auto_post_loop(client: Client):
                     )
             
             # ⏱️ Har 15 minute (900 seconds) me post karega.
-            await asyncio.sleep(900)
+            await asyncio.sleep(600)
             
         except Exception as e:
             print(f"⚠️ [Auto-Post Error]: {e}")
