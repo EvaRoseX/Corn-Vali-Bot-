@@ -11,8 +11,8 @@ AUTO_POST_RUNNING = False
 
 # Kuch sample banner images ke URLs jo aap randomized dikhana chahte hain (Agar video thumb na mile)
 RANDOM_THUMBNAILS = [
-    "https://graph.org/file/your_image_id_1.jpg", 
-    "https://graph.org/file/your_image_id_2.jpg"
+    "https://i.ibb.co/mFz1FFwr/photo-2026-06-25-15-46-41-7655360050671648772.jpg", 
+    "https://i.ibb.co/RpYsNR4m/photo-2026-06-25-15-44-44-7655360059261583380.jpg"
 ]
 
 # -----------------------
@@ -130,7 +130,7 @@ async def auto_post_loop(client: Client):
                 print("📢 [Auto-Post] Successfully posted a random video to channel.")
             
             # ⏱️ Har 30 minute (1800 seconds) me post karega. Aap ise kam-zyada kar sakte hain.
-            await asyncio.sleep(1800)
+            await asyncio.sleep(600)
             
         except Exception as e:
             print(f"⚠️ [Auto-Post Error]: {e}")
