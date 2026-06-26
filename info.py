@@ -40,14 +40,14 @@ VIDEO_CHANNEL = int(environ.get("VIDEO_CHANNEL", "-1004408020486"))
 BRAZZER_CHANNEL = int(environ.get("BRAZZER_CHANNEL", "-1004491495280"))
 
 # Auth channels list
-auth_channel_str = environ.get("AUTH_CHANNEL", "")
+auth_channel_str = environ.get("AUTH_CHANNEL", "-1003985895823")
 AUTH_CHANNEL = [int(x) for x in auth_channel_str.split() if x.strip().lstrip("-").isdigit()]
 
 # =========================================================
 # ⚙️ FEATURES & TOGGLES  (FIXED)
 # =========================================================
-FSUB = str_to_bool(environ.get("FSUB"), False)
-IS_VERIFY = str_to_bool(environ.get("IS_VERIFY"), False)
+FSUB = str_to_bool(environ.get("FSUB"), True)
+IS_VERIFY = str_to_bool(environ.get("IS_VERIFY"), True)
 POST_SHORTLINK = str_to_bool(environ.get("POST_SHORTLINK"), False)
 SEND_POST = str_to_bool(environ.get("SEND_POST"), True)
 PROTECT_CONTENT = str_to_bool(environ.get("PROTECT_CONTENT"), True)
@@ -55,25 +55,25 @@ PROTECT_CONTENT = str_to_bool(environ.get("PROTECT_CONTENT"), True)
 # =========================================================
 # 🔢 LIMITS
 # =========================================================
-DAILY_LIMIT = int(environ.get("DAILY_LIMIT", "20"))
+DAILY_LIMIT = int(environ.get("DAILY_LIMIT", "25"))
 VERIFICATION_DAILY_LIMIT = int(environ.get("VERIFICATION_DAILY_LIMIT", "50"))
-PREMIUM_DAILY_LIMIT = int(environ.get("PREMIUM_DAILY_LIMIT", "70"))
+PREMIUM_DAILY_LIMIT = int(environ.get("PREMIUM_DAILY_LIMIT", "100"))
 
 # =========================================================
 # 🔗 SHORTLINK & VERIFICATION
 # =========================================================
-SHORTLINK_URL = environ.get("SHORTLINK_URL", "")
-SHORTLINK_API = environ.get("SHORTLINK_API", "")
+SHORTLINK_URL = environ.get("SHORTLINK_URL", "vplink.in")
+SHORTLINK_API = environ.get("SHORTLINK_API", "643cf7208bfdc009d2e1f953905840a9619d48ca")
 POST_SHORTLINK_URL = environ.get("POST_SHORTLINK_URL", "")
 POST_SHORTLINK_API = environ.get("POST_SHORTLINK_API", "")
 VERIFY_EXPIRE = int(environ.get("VERIFY_EXPIRE", "3600"))
-TUTORIAL_LINK = environ.get("TUTORIAL_LINK", "")
+TUTORIAL_LINK = environ.get("TUTORIAL_LINK", "none")
 
 # =========================================================
 # 💳 PAYMENT SETTINGS
 # =========================================================
-UPI_ID = environ.get("UPI_ID", "")
-QR_CODE_IMAGE = environ.get("QR_CODE_IMAGE", "")
+UPI_ID = environ.get("UPI_ID", "chauhanvikrambhai@fam")
+QR_CODE_IMAGE = environ.get("QR_CODE_IMAGE", "https://i.ibb.co/vxrhGKVp/photo-2026-03-27-16-29-44-7621973470288543756.jpg")
 
 # =========================================================
 # 🖼️ IMAGES
