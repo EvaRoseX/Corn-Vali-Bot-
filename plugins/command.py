@@ -6,11 +6,26 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid, MediaEmpty
 from Script import script
 from database.users_db import db
-from info import START_PIC, LOG_CHANNEL, PREMIUM_LOGS, FSUB, QR_CODE_IMAGE, DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID
+# START_PIC ko yahan se hata diya hai kyunki ab hum multiple lagayenge
+from info import LOG_CHANNEL, PREMIUM_LOGS, FSUB, QR_CODE_IMAGE, DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID
 from utils import temp, is_user_joined
 from plugins.verification import verify_user_on_start
 from plugins.send_file import send_requested_file
 from plugins.refer import refer_on_start
+
+# =================================================
+# 🖼️ MULTIPLE START IMAGES LIST
+# =================================================
+# Yahan aap apni saari images ke telegraph ya graph.org ke links daal sakte hain.
+# Jitni chahein utni images comma (,) laga kar add kar dein.
+START_PICS_LIST = [
+    "https://i.ibb.co/vv3vZ5Xg/photo-2026-06-26-12-05-20-7655674163104841744.jpg",
+    "https://i.ibb.co/6cKdRWbV/photo-2026-06-26-12-05-24-7655674201759547408.jpg",
+    "https://i.ibb.co/84bJ6P79/photo-2026-06-26-12-05-26-7655674223234383888.jpg",
+    "https://i.ibb.co/0w6w5BW/photo-2026-06-26-12-05-29-7655674261889089552.jpg",
+    "https://i.ibb.co/zHXf41Zs/photo-2026-06-26-12-05-30-7655674304838762512.jpg",
+    "https://i.ibb.co/HfDpcqqk/photo-2026-06-26-12-05-33-7655674326313598980.jpg"
+]
 
 # =================================================
 # 🚀 START COMMAND (ZERO-ERROR SYSTEM)
@@ -105,8 +120,11 @@ async def start_command(client, message: Message):
         one_time_keyboard=False
     )
 
+    # 🔥 YAHAN SE RANDOM IMAGE SELECT HOGI
+    random_pic = random.choice(START_PICS_LIST)
+
     await message.reply_photo(
-        photo=START_PIC,
+        photo=random_pic,  # Purane START_PIC ki jagah random_pic set kar diya
         caption=script.START_TXT.format(mention, temp.U_NAME, temp.U_NAME),
         reply_markup=reply_keyboard,
         has_spoiler=True
