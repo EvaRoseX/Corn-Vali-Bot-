@@ -15,7 +15,6 @@ from plugins.refer import refer_on_start
 # =================================================
 # ⚙️ FIXED DIRECT CHANNEL SETTING
 # =================================================
-# ⚠️ YAHAN APNE CHANNEL KI ID DIRECT (-) MINUS KE SATH DAAL DO (info.py ki zaroorat nahi hai)
 MY_PHOTO_CHANNEL = -1004493848925  
 
 # =================================================
@@ -31,7 +30,7 @@ START_PICS_LIST = [
 ]
 
 # =================================================
-# 🚀 START COMMAND (ZERO-ERROR SYSTEM)
+# 🚀 START COMMAND (CLEAN SINGLE-MESSAGE SYSTEM)
 # =================================================
 @Client.on_message(filters.command("start") & filters.private)
 async def start_command(client, message: Message):
@@ -68,9 +67,6 @@ async def start_command(client, message: Message):
         except Exception as e:
             print(f"Referral Error: {e}")
 
-    # --------------------------------------------------------
-    # 🔥 AUTO-BACKUP DEEP LINKING RESOLVER
-    # --------------------------------------------------------
     if argument:
         search_id = argument.replace("avx-", "")
         for attempt in range(5):
@@ -95,7 +91,6 @@ async def start_command(client, message: Message):
                     break
         return await message.reply("🍿 <b>Server busy!</b> Kripya channel se kisi doosri video par click karein.")
 
-    # --- New User Registration ---
     if not await db.is_user_exist(user_id):
         await db.add_user(user_id, message.from_user.first_name)
         try:
@@ -103,18 +98,7 @@ async def start_command(client, message: Message):
         except Exception:
             pass
 
-    # ⌨️ REPLY KEYBOARD (Niche keyboard me dikhega)
-    reply_keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton("Get Video"), KeyboardButton("Get Photo")],
-            [KeyboardButton("Brazzers")],
-            [KeyboardButton("My plan"), KeyboardButton("Subscription")]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=False
-    )
-
-    # 🔗 INLINE KEYBOARD (Aapke personal link ke sath buttons)
+    # 🔗 INLINE KEYBOARD (Ab ye direct photo ke niche set hoga bina kisi gap ke)
     inline_keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("Update Channel 📢", url="https://t.me/ERBotsUpdate"),
@@ -124,18 +108,12 @@ async def start_command(client, message: Message):
 
     random_pic = random.choice(START_PICS_LIST)
 
-    # Main welcome photo send ho rahi hai
+    # Photo aur inline buttons ek sath single message me lock ho gayi
     await message.reply_photo(
         photo=random_pic,
         caption=script.START_TXT.format(mention, temp.U_NAME, temp.U_NAME),
-        reply_markup=reply_keyboard,
+        reply_markup=inline_keyboard,
         has_spoiler=True
-    )
-    
-    # Buttons ko chat me thik niche chipkane ke liye text message bheja
-    await message.reply_text(
-        text="👇 <b>Quick Links:</b>",
-        reply_markup=inline_keyboard
     )
 
 # =================================================
@@ -145,11 +123,22 @@ async def start_command(client, message: Message):
 async def send_photo_from_channel(client, message: Message):
     processing_msg = await message.reply("🔄 <b>Aapke bhandar se photo nikal raha hoon...</b>")
     
+    # Jab user active photo maangega, tabhi nichla main-menu keyboard popup hoga
+    reply_keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton("Get Video"), KeyboardButton("Get Photo")],
+            [KeyboardButton("Brazzers")],
+            [KeyboardButton("My plan"), KeyboardButton("Subscription")]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=False
+    )
+    
     try:
         chat_details = await client.get_chat(MY_PHOTO_CHANNEL)
         latest_id = chat_details.pinned_message.id if chat_details.pinned_message else 1500
             
-        if not latest_id or latest_id < 2:
+        if not_id or latest_id < 2:
             latest_id = 700 
             
         for _ in range(60): 
@@ -164,7 +153,8 @@ async def send_photo_from_channel(client, message: Message):
                     chat_id=message.chat.id,
                     from_chat_id=MY_PHOTO_CHANNEL,
                     message_id=random_msg_id,
-                    caption="<b>Here is your requested photo! ✨\n\nClick 'Get Photo' again for more!</b>"
+                    caption="<b>Here is your requested photo! ✨\n\nClick 'Get Photo' again for more!</b>",
+                    reply_markup=reply_keyboard # Photo aate hi user ka menu keyboard open ho jayega
                 )
                 await processing_msg.delete()
                 return 
