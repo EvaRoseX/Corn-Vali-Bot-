@@ -6,8 +6,7 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid, MediaEmpty
 from Script import script
 from database.users_db import db
-# START_PIC ko yahan se hata diya hai kyunki ab hum multiple lagayenge
-from info import LOG_CHANNEL, PREMIUM_LOGS, FSUB, QR_CODE_IMAGE, DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID
+from info import LOG_CHANNEL, PREMIUM_LOGS, FSUB, QR_CODE_IMAGE, DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID, PHOTO_CHANNEL
 from utils import temp, is_user_joined
 from plugins.verification import verify_user_on_start
 from plugins.send_file import send_requested_file
@@ -16,8 +15,6 @@ from plugins.refer import refer_on_start
 # =================================================
 # 🖼️ MULTIPLE START IMAGES LIST
 # =================================================
-# Yahan aap apni saari images ke telegraph ya graph.org ke links daal sakte hain.
-# Jitni chahein utni images comma (,) laga kar add kar dein.
 START_PICS_LIST = [
     "https://i.ibb.co/vv3vZ5Xg/photo-2026-06-26-12-05-20-7655674163104841744.jpg",
     "https://i.ibb.co/6cKdRWbV/photo-2026-06-26-12-05-24-7655674201759547408.jpg",
@@ -65,45 +62,30 @@ async def start_command(client, message: Message):
         except Exception as e:
             print(f"Referral Error: {e}")
 
-    # --------------------------------------------------------
-    # 🔥 AUTO-BACKUP DEEP LINKING RESOLVER
-    # --------------------------------------------------------
     if argument:
         search_id = argument.replace("avx-", "")
-        
-        # Hamein 5 chances milenge working video dhoondhne ke liye agar purani file kharab nikli
         for attempt in range(5):
             try:
-                # 1. Requested video bhejne ki koshish karo
                 await send_requested_file(client, message, user_id, search_id)
-                return # Agar send ho gayi toh loop se bahar safely!
-                
+                return
             except (MediaEmpty, Exception) as e:
-                # Agar Telegram ne bola MEDIA_EMPTY ya video delete ho chuki hai
                 if "MEDIA_EMPTY" in str(e) or isinstance(e, MediaEmpty):
                     print(f"⚠️ Broken File ID auto-bypassed: {search_id}")
-                    
-                    # Backup: Database se ek random fresh unique_id uthao
                     try:
                         pipeline = [{"$sample": {"size": 1}}]
                         cursor = db.videos.aggregate(pipeline)
                         result = await cursor.to_list(length=1)
                         if result:
-                            # Agli baar ke liye search_id ko nayi video id se badal do
                             search_id = result[0]["file_unique_id"]
-                            continue # Dobara try karo naye ID ke sath
+                            continue
                     except Exception as db_err:
                         print(f"Backup fetch error: {db_err}")
                         break
                 else:
-                    # Agar koi aur network error hai toh break karo
                     print(f"Other Error: {e}")
                     break
-                    
-        # Agar saari koshish fail ho jaye (Extreme Case) toh hi ye safe alert message dikhayega
         return await message.reply("🍿 <b>Server busy!</b> Kripya channel se kisi doosri video par click karein.")
 
-    # --- New User Registration ---
     if not await db.is_user_exist(user_id):
         await db.add_user(user_id, message.from_user.first_name)
         try:
@@ -111,29 +93,66 @@ async def start_command(client, message: Message):
         except Exception:
             pass
             
+    # ⌨️ NEW KEYBOARD LAYOUT WITH "GET PHOTO"
     reply_keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton("Get Video"), KeyboardButton("Brazzers")],
+            [KeyboardButton("Get Video"), KeyboardButton("Get Photo")], # <- Saath me set ho gaya!
+            [KeyboardButton("Brazzers")],
             [KeyboardButton("My plan"), KeyboardButton("Subscription")]
         ],
         resize_keyboard=True,
         one_time_keyboard=False
     )
 
-    # 🔥 YAHAN SE RANDOM IMAGE SELECT HOGI
     random_pic = random.choice(START_PICS_LIST)
 
     await message.reply_photo(
-        photo=random_pic,  # Purane START_PIC ki jagah random_pic set kar diya
+        photo=random_pic,
         caption=script.START_TXT.format(mention, temp.U_NAME, temp.U_NAME),
         reply_markup=reply_keyboard,
         has_spoiler=True
     )
 
 # =================================================
+# 🖼️ GET PHOTO HANDLER (DYNAMIC CHANNEL FETCH)
+# =================================================
+# Jab user "Get Photo" text bhejega ya keyboard par click karega, ye execute hoga
+@Client.on_message(filters.text & filters.private)
+async def send_photo_from_channel(client, message: Message):
+    if message.text == "Get Photo":
+        # Check karega ki info.py me channel ID set hai ya nahi
+        if not PHOTO_CHANNEL:
+            return await message.reply("⚠️ <b>Photo Channel configuration missing hai!</b>")
+            
+        processing_msg = await message.reply("🔄 <b>Aapke liye badiya photo dhoondh raha hoon...</b>")
+        
+        try:
+            # Channel se random media uthane ke liye last 100 messages fetch karenge
+            all_photos = []
+            async for msg in client.get_chat_history(PHOTO_CHANNEL, limit=100):
+                if msg.photo:
+                    all_photos.append(msg.photo.file_id)
+            
+            if not all_photos:
+                return await processing_msg.edit("❌ <b>Photo wale channel me koi photo nahi mili!</b>")
+                
+            # List me se ek random photo select hogi
+            random_photo_id = random.choice(all_photos)
+            
+            # User ko photo send karein aur purana processing msg delete karein
+            await message.reply_photo(
+                photo=random_photo_id,
+                caption="<b>Here is your requested photo! ✨\n\nJoin our backup channels for more content!</b>"
+            )
+            await processing_msg.delete()
+            
+        except Exception as e:
+            print(f"Error in Get Photo: {e}")
+            await processing_msg.edit(f"⚠️ <b>Photo nahi bhej paya.</b> Check karein ki bot channel me Admin hai ya nahi.")
+
+# =================================================
 # 📜 HELPER HANDLERS
 # =================================================
-
 @Client.on_message(filters.command("disclaimer") & filters.private)
 async def legal_disclaimer(client, message: Message):
     await send_legal_text(client, message, script.DISCLAIMER_TXT)
@@ -151,24 +170,12 @@ async def legal_hepl(client, message: Message):
     await send_legal_text(client, message, script.HELP_TXT)
     
 async def send_legal_text(client, message, text):
-    inline_buttons = [[
-        InlineKeyboardButton('• ᴄʟᴏsᴇ •', callback_data='close_data')
-    ]]
-    await message.reply_text(
-        text=text,
-        reply_markup=InlineKeyboardMarkup(inline_buttons),
-        disable_web_page_preview=True
-    )
+    inline_buttons = [[InlineKeyboardButton('• ᴄʟᴏsᴇ •', callback_data='close_data')]]
+    await message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(inline_buttons), disable_web_page_preview=True)
 
 async def send_about_text(client, message):
-    inline_buttons = [[
-        InlineKeyboardButton('• ᴄʟᴏsᴇ •', callback_data='close_data')
-    ]]
-    await message.reply_text(
-        text=script.ABOUT_TXT.format(temp.B_NAME, temp.B_LINK),
-        reply_markup=InlineKeyboardMarkup(inline_buttons),
-        disable_web_page_preview=True
-    )
+    inline_buttons = [[InlineKeyboardButton('• ᴄʟᴏsᴇ •', callback_data='close_data')]]
+    await message.reply_text(text=script.ABOUT_TXT.format(temp.B_NAME, temp.B_LINK), reply_markup=InlineKeyboardMarkup(inline_buttons), disable_web_page_preview=True)
 
 # =========================================================
 # 🔙 CALLBACK QUERY HANDLER
@@ -176,14 +183,10 @@ async def send_about_text(client, message):
 @Client.on_callback_query()
 async def cb_handler(client: Client, query: CallbackQuery):
     data = query.data
-
     if data == "close_data":
         await query.message.delete()
-
     elif data == "get":
-        buttons = [
-            [InlineKeyboardButton('• 𝖢𝗅𝗈𝗌𝖾 •', callback_data='close_data')]
-        ]
+        buttons = [[InlineKeyboardButton('• 𝖢𝗅𝗈𝗌𝖾 •', callback_data='close_data')]]
         await query.message.reply_photo(
             photo=QR_CODE_IMAGE,
             caption=script.SEENBUY_TXT.format(DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID),
