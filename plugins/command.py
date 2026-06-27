@@ -6,11 +6,17 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid, MediaEmpty
 from Script import script
 from database.users_db import db
-from info import LOG_CHANNEL, PREMIUM_LOGS, FSUB, QR_CODE_IMAGE, DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID, PHOTO_CHANNEL
+from info import LOG_CHANNEL, PREMIUM_LOGS, FSUB, QR_CODE_IMAGE, DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID
 from utils import temp, is_user_joined
 from plugins.verification import verify_user_on_start
 from plugins.send_file import send_requested_file
 from plugins.refer import refer_on_start
+
+# =================================================
+# ⚙️ FIXED DIRECT CHANNEL SETTING
+# =================================================
+# ⚠️ YAHAN APNE CHANNEL KI ID DIRECT (-) MINUS KE SATH DAAL DO (info.py ki zaroorat nahi hai)
+MY_PHOTO_CHANNEL = -1004493848925  
 
 # =================================================
 # 🖼️ MULTIPLE START IMAGES LIST
@@ -97,7 +103,7 @@ async def start_command(client, message: Message):
         except Exception:
             pass
 
-    # ⌨️ BUTTON KA NAAM EKDAM "Get Photo" SET HAI
+    # ⌨️ BUTTON NAME SET TO "Get Photo"
     reply_keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton("Get Video"), KeyboardButton("Get Photo")],
@@ -118,44 +124,41 @@ async def start_command(client, message: Message):
     )
 
 # =================================================
-# 🖼️ GET PHOTO HANDLER (COPY METHOD - NO FORWARD TAG)
+# 🖼️ GET PHOTO HANDLER (100% DIRECT BACKEND VALUE)
 # =================================================
 @Client.on_message((filters.regex(r"^Get Photo$") | filters.command("photo")) & filters.private)
 async def send_photo_from_channel(client, message: Message):
-    if not PHOTO_CHANNEL:
-        return await message.reply("⚠️ <b>Photo Channel configuration missing hai!</b>")
-        
     processing_msg = await message.reply("🔄 <b>Aapke bhandar se photo nikal raha hoon...</b>")
     
     try:
-        # Channel ka sabse latest message ID nikalenge automatic
-        async for last_msg in client.get_chat_history(PHOTO_CHANNEL, limit=1):
+        # Channel ka sabsse latest message ID automatic nikalenge
+        async for last_msg in client.get_chat_history(MY_PHOTO_CHANNEL, limit=1):
             latest_id = last_msg.id
             
         if not latest_id or latest_id < 2:
-            latest_id = 700 # Agar safe backup chahiye toh 700 posts set hain
+            latest_id = 700 
             
-        # 40 baar automatic random choose karega jab tak solid message na mile (bina forward tag ke copy karega)
+        # 40 baar loop taaki khali ids skip ho jayein aur text content na send ho
         for _ in range(40): 
             random_msg_id = random.randint(1, latest_id)
             try:
-                # copy_message direct photo ko bina kisi tag ke user ko deliver kar deta hai
+                # Direct message ko copy karega bina kisi tag ke user ki chat me
                 await client.copy_message(
                     chat_id=message.chat.id,
-                    from_chat_id=PHOTO_CHANNEL,
+                    from_chat_id=MY_PHOTO_CHANNEL,
                     message_id=random_msg_id,
                     caption="<b>Here is your requested photo! ✨\n\nClick 'Get Photo' again for more!</b>"
                 )
                 await processing_msg.delete()
-                return # Photo send hote hi safely end!
+                return 
             except Exception:
-                continue # Agar text post ya deleted id ho toh agla random check karega
+                continue 
                 
         await processing_msg.edit("⚠️ <b>Kuch posts skip ho gayi, kripya dubara click karein!</b>")
         
     except Exception as e:
         print(f"Photo Fetch Error: {e}")
-        await processing_msg.edit("⚠️ <b>Koshish nakam rahi!</b> Ek baar check karein ki bot aapke channel me Admin hai ya nahi.")
+        await processing_msg.edit(f"⚠️ <b>Koshish nakam rahi!</b> Debug Info: {e}")
 
 # =================================================
 # 📜 HELPER HANDLERS
