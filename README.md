@@ -1,4 +1,4 @@
-# 🤖 Pron Wali Zone Adult Zone (@PronWaliZoneBot)
+# 🤖 Corn Wali Zone Adult Zone (@ERCornBot)
 
 A simple yet powerful Pron Wali Zone Adult Zone Telegram bot to manage premium video subscriptions, daily limits, and auto-delete functionalities. Built with Pyrogram and MongoDB.
 
@@ -192,10 +192,10 @@ owner_cmd - 👑 𝖠𝖽𝗆𝗂𝗇 𝖢𝗈𝗆𝗆𝖺𝗇𝖽𝗌 𝖬𝖾�
 
 
 <p align="center">
-  <a href="https://t.me/PronWaliZoneBot">
+  <a href="https://t.me/ERCornBot">
     <img src="https://img.shields.io/badge/🤖%20START%20DEMO%20BOT-blue?style=for-the-badge&logo=telegram">
   </a>
-  <a href="https://t.me/AV_SUPPORT_GROUP">
+  <a href="https://t.me/ERBotsUpdate">
     <img src="https://img.shields.io/badge/💬%20JOIN%20SUPPORT-black?style=for-the-badge&logo=telegram">
   </a>
 </p>
@@ -212,7 +212,7 @@ owner_cmd - 👑 𝖠𝖽𝗆𝗂𝗇 𝖢𝗈𝗆𝗆𝖺𝗇𝖽𝗌 𝖬𝖾�
   <a href="https://github.com/Botsthe">
     <img src="https://img.shields.io/github/followers/Botsthe?style=social&label=Follow&style=flat-square">
   </a>
-  <a href="https://t.me/BOT_OWNER26">
+  <a href="https://t.me/EvaRoseX">
     <img src="https://img.shields.io/badge/Telegram-DM%20Me-blue?style=flat-square&logo=telegram">
   </a>
   <a href="https://av-botz.vercel.app/">
