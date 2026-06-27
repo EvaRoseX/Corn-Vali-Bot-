@@ -118,7 +118,7 @@ async def start_command(client, message: Message):
     inline_keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("Update Channel 📢", url="https://t.me/ERBotsUpdate"),
-            InlineKeyboardButton("Buy Source Code 💰", url="@EvaRoseX")
+            InlineKeyboardButton("Buy Source Code 💰", url="https://t.me/EvaRoseX")
         ]
     ])
 
