@@ -97,7 +97,7 @@ async def start_command(client, message: Message):
         except Exception:
             pass
 
-    # ⌨️ FIXED: Button ka naam wapas "Get Photo" kar diya hai!
+    # ⌨️ BUTTON KA NAAM EKDAM "Get Photo" SET HAI
     reply_keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton("Get Video"), KeyboardButton("Get Photo")],
@@ -118,48 +118,44 @@ async def start_command(client, message: Message):
     )
 
 # =================================================
-# 🖼️ GET PHOTO HANDLER (NO FORWARD TAG - DIRECT SEND)
+# 🖼️ GET PHOTO HANDLER (COPY METHOD - NO FORWARD TAG)
 # =================================================
-# Ab ye text aur command dono ko automatic pakad lega!
 @Client.on_message((filters.regex(r"^Get Photo$") | filters.command("photo")) & filters.private)
 async def send_photo_from_channel(client, message: Message):
     if not PHOTO_CHANNEL:
         return await message.reply("⚠️ <b>Photo Channel configuration missing hai!</b>")
         
-    processing_msg = await message.reply("🔄 <b>Photo fetch kar raha hoon...</b>")
+    processing_msg = await message.reply("🔄 <b>Aapke bhandar se photo nikal raha hoon...</b>")
     
     try:
-        # Channel ka sabse latest message ID nikalenge
+        # Channel ka sabse latest message ID nikalenge automatic
         async for last_msg in client.get_chat_history(PHOTO_CHANNEL, limit=1):
             latest_id = last_msg.id
             
         if not latest_id or latest_id < 2:
-            latest_id = 100
+            latest_id = 700 # Agar safe backup chahiye toh 700 posts set hain
             
-        # Random message check karne ke liye loop lagayenge taaki khali text post na send ho
-        for _ in range(10):
+        # 40 baar automatic random choose karega jab tak solid message na mile (bina forward tag ke copy karega)
+        for _ in range(40): 
             random_msg_id = random.randint(1, latest_id)
             try:
-                # Channel se woh specific message copy karenge
-                channel_msg = await client.get_messages(PHOTO_CHANNEL, random_msg_id)
-                
-                # Agar us message me sach me photo hai, toh hi bhejenge
-                if channel_msg and channel_msg.photo:
-                    await message.reply_photo(
-                        photo=channel_msg.photo.file_id,
-                        caption="<b>Here is your requested photo! ✨\n\nClick 'Get Photo' again for more!</b>"
-                    )
-                    await processing_msg.delete()
-                    return # Kaam ho gaya, function se bahar!
+                # copy_message direct photo ko bina kisi tag ke user ko deliver kar deta hai
+                await client.copy_message(
+                    chat_id=message.chat.id,
+                    from_chat_id=PHOTO_CHANNEL,
+                    message_id=random_msg_id,
+                    caption="<b>Here is your requested photo! ✨\n\nClick 'Get Photo' again for more!</b>"
+                )
+                await processing_msg.delete()
+                return # Photo send hote hi safely end!
             except Exception:
-                continue # Agar wo message ID deleted thi toh agla loop automatic chalega
+                continue # Agar text post ya deleted id ho toh agla random check karega
                 
-        # Safe fallback agar random loop me photo na mile
-        await processing_msg.edit("⚠️ <b>Is baar koi valid photo nahi mili, kripya dobara click karein!</b>")
+        await processing_msg.edit("⚠️ <b>Kuch posts skip ho gayi, kripya dubara click karein!</b>")
         
     except Exception as e:
         print(f"Photo Fetch Error: {e}")
-        await processing_msg.edit("⚠️ <b>Koshish nakam rahi!</b> Check karein ki bot channel me Admin hai.")
+        await processing_msg.edit("⚠️ <b>Koshish nakam rahi!</b> Ek baar check karein ki bot aapke channel me Admin hai ya nahi.")
 
 # =================================================
 # 📜 HELPER HANDLERS
