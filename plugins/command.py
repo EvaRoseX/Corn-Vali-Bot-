@@ -124,27 +124,32 @@ async def start_command(client, message: Message):
     )
 
 # =================================================
-# 🖼️ GET PHOTO HANDLER (UPDATED NO-ERROR METHOD)
+# 🖼️ GET PHOTO HANDLER (100% FILTER FOR PHOTOS ONLY)
 # =================================================
 @Client.on_message((filters.regex(r"^Get Photo$") | filters.command("photo")) & filters.private)
 async def send_photo_from_channel(client, message: Message):
     processing_msg = await message.reply("🔄 <b>Aapke bhandar se photo nikal raha hoon...</b>")
     
     try:
-        # get_chat se chat details fetch karenge (bina history read kiye)
+        # get_chat se channel details nikalenge bina error ke
         chat_details = await client.get_chat(MY_PHOTO_CHANNEL)
-        
-        # Agar channel par koi pinned message hai to uski ID ko latest maanenge, nahi to default 1500 le lenge
         latest_id = chat_details.pinned_message.id if chat_details.pinned_message else 1500
             
         if not latest_id or latest_id < 2:
             latest_id = 700 
             
-        # 40 baar loop taaki khali ya invalid IDs skip ho jayein
-        for _ in range(40): 
+        # 60 baar loop chalega taaki correct photo milne ke chance maximum ho jayein
+        for _ in range(60): 
             random_msg_id = random.randint(1, latest_id)
             try:
-                # Direct message ko copy karega user ki private chat me
+                # Message data fetch karenge pehle check karne ke liye
+                target_msg = await client.get_messages(MY_PHOTO_CHANNEL, random_msg_id)
+                
+                # Agar message valid nahi hai ya usme photo media nahi hai, to skip karke doosra try karo
+                if not target_msg or not target_msg.photo:
+                    continue
+                
+                # Agar photo mil gayi, tabhi use user ko copy karenge
                 await client.copy_message(
                     chat_id=message.chat.id,
                     from_chat_id=MY_PHOTO_CHANNEL,
@@ -156,7 +161,7 @@ async def send_photo_from_channel(client, message: Message):
             except Exception:
                 continue 
                 
-        await processing_msg.edit("⚠️ <b>Kuch posts skip ho gayi, kripya dubara click karein!</b>")
+        await processing_msg.edit("⚠️ <b>Kuch posts skip ho gayi ya range me photo nahi mili, kripya dubara click karein!</b>")
         
     except Exception as e:
         print(f"Photo Fetch Error: {e}")
@@ -204,4 +209,4 @@ async def cb_handler(client: Client, query: CallbackQuery):
             caption=script.SEENBUY_TXT.format(DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID),
             reply_markup=InlineKeyboardMarkup(buttons),
             parse_mode=enums.ParseMode.HTML
-    )
+        )
