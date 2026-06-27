@@ -6,8 +6,8 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid, MediaEmpty
 from Script import script
 from database.users_db import db
-# 🛠️ INFO se PHOTO_CHANNEL ko import kar liya gaya hai
-from info import LOG_CHANNEL, PREMIUM_LOGS, FSUB, QR_CODE_IMAGE, DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID, PHOTO_CHANNEL
+# 🛠️ INFO se PHOTO_CHANNEL aur TOTAL_CHANNEL_POSTS ko yahan import kiya hai
+from info import LOG_CHANNEL, PREMIUM_LOGS, FSUB, QR_CODE_IMAGE, DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID, PHOTO_CHANNEL, TOTAL_CHANNEL_POSTS
 from utils import temp, is_user_joined
 from plugins.verification import verify_user_on_start
 from plugins.send_file import send_requested_file
@@ -24,6 +24,12 @@ START_PICS_LIST = [
     "https://i.ibb.co/zHXf41Zs/photo-2026-06-26-12-05-30-7655674304838762512.jpg",
     "https://i.ibb.co/HfDpcqqk/photo-2026-06-26-12-05-33-7655674326313598980.jpg"
 ]
+
+# Safe-check: Agar TOTAL_CHANNEL_POSTS info.py me nahi define kiya hai toh ye crash nahi hone dega
+try:
+    max_posts = int(TOTAL_CHANNEL_POSTS)
+except Exception:
+    max_posts = 700  # Default backup value
 
 # =================================================
 # 🚀 START COMMAND (ZERO-ERROR SYSTEM)
@@ -68,16 +74,13 @@ async def start_command(client, message: Message):
     # --------------------------------------------------------
     if argument:
         search_id = argument.replace("avx-", "")
-        
         for attempt in range(5):
             try:
                 await send_requested_file(client, message, user_id, search_id)
                 return 
-                
             except (MediaEmpty, Exception) as e:
                 if "MEDIA_EMPTY" in str(e) or isinstance(e, MediaEmpty):
                     print(f"⚠️ Broken File ID auto-bypassed: {search_id}")
-                    
                     try:
                         pipeline = [{"$sample": {"size": 1}}]
                         cursor = db.videos.aggregate(pipeline)
@@ -91,7 +94,6 @@ async def start_command(client, message: Message):
                 else:
                     print(f"Other Error: {e}")
                     break
-                    
         return await message.reply("🍿 <b>Server busy!</b> Kripya channel se kisi doosri video par click karein.")
 
     # --- New User Registration ---
@@ -102,10 +104,10 @@ async def start_command(client, message: Message):
         except Exception:
             pass
 
-    # ⌨️ KEYBOARD BLOCK KO IF SE BAHAR NIKAL DIYA (TAAKI SABKO DIKHE)
+    # ⌨️ KEYBOARD LAYOUT WITH /photo COMMAND
     reply_keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton("Get Video"), KeyboardButton("Get Photo")], # <- Naya button set ho gaya!
+            [KeyboardButton("Get Video"), KeyboardButton("/photo")],
             [KeyboardButton("Brazzers")],
             [KeyboardButton("My plan"), KeyboardButton("Subscription")]
         ],
@@ -113,7 +115,6 @@ async def start_command(client, message: Message):
         one_time_keyboard=False
     )
 
-    # 🔥 RANDOM IMAGE SELECTOR
     random_pic = random.choice(START_PICS_LIST)
 
     await message.reply_photo(
@@ -124,43 +125,44 @@ async def start_command(client, message: Message):
     )
 
 # =================================================
-# 🖼️ GET PHOTO BUTTON HANDLER (DYNAMIC CHANNEL FETCH)
+# 🖼️ GET PHOTO HANDLER (SUPER-FAST FORWARD METHOD)
 # =================================================
-@Client.on_message(filters.text & filters.private)
+@Client.on_message(filters.command("photo") & filters.private)
 async def send_photo_from_channel(client, message: Message):
-    if message.text == "Get Photo":
-        if not PHOTO_CHANNEL:
-            return await message.reply("⚠️ <b>Photo Channel configuration missing hai! info.py check karein.</b>")
-            
-        processing_msg = await message.reply("🔄 <b>Aapke liye badiya photo dhoondh raha hoon...</b>")
+    if not PHOTO_CHANNEL:
+        return await message.reply("⚠️ <b>Photo Channel configuration missing hai!</b>")
         
+    processing_msg = await message.reply("🔄 <b>Photo fetch kar raha hoon...</b>")
+    
+    # 1 se lekar max_posts tak koi bhi ek random message ID chunega
+    random_msg_id = random.randint(1, max_posts)
+    
+    try:
+        # Direct info.py wale PHOTO_CHANNEL se message forward karega
+        await client.forward_messages(
+            chat_id=message.chat.id,
+            from_chat_id=PHOTO_CHANNEL,
+            message_ids=random_msg_id
+        )
+        await processing_msg.delete()
+        
+    except Exception as e:
+        print(f"Forward Error: {e}")
         try:
-            all_photos = []
-            # Channel se latest 100 messages me se photos filter karega
-            async for msg in client.get_chat_history(PHOTO_CHANNEL, limit=100):
-                if msg.photo:
-                    all_photos.append(msg.photo.file_id)
-            
-            if not all_photos:
-                return await processing_msg.edit("❌ <b>Photo wale channel me koi photo nahi mili!</b>")
-                
-            # Random photo select hogi
-            random_photo_id = random.choice(all_photos)
-            
-            await message.reply_photo(
-                photo=random_photo_id,
-                caption="<b>Here is your requested photo! ✨\n\nJoin our backup channels for more content!</b>"
+            # Backup ID try karega agar pehli ID khali nikli toh
+            backup_msg_id = random.randint(1, max_posts)
+            await client.forward_messages(
+                chat_id=message.chat.id,
+                from_chat_id=PHOTO_CHANNEL,
+                message_ids=backup_msg_id
             )
             await processing_msg.delete()
-            
-        except Exception as e:
-            print(f"Error in Get Photo: {e}")
-            await processing_msg.edit(f"⚠️ <b>Photo nahi bhej paya.</b> Check karein ki bot channel me Admin hai ya nahi.")
+        except Exception:
+            await processing_msg.edit("⚠️ <b>Koshish nakam rahi!</b> Ek baar fir se click karein ya check karein ki bot channel me Admin hai.")
 
 # =================================================
 # 📜 HELPER HANDLERS
 # =================================================
-
 @Client.on_message(filters.command("disclaimer") & filters.private)
 async def legal_disclaimer(client, message: Message):
     await send_legal_text(client, message, script.DISCLAIMER_TXT)
@@ -178,24 +180,12 @@ async def legal_hepl(client, message: Message):
     await send_legal_text(client, message, script.HELP_TXT)
     
 async def send_legal_text(client, message, text):
-    inline_buttons = [[
-        InlineKeyboardButton('• ᴄʟᴏsᴇ •', callback_data='close_data')
-    ]]
-    await message.reply_text(
-        text=text,
-        reply_markup=InlineKeyboardMarkup(inline_buttons),
-        disable_web_page_preview=True
-    )
+    inline_buttons = [[InlineKeyboardButton('• ᴄʟᴏsᴇ •', callback_data='close_data')]]
+    await message.reply_text(text=text, reply_markup=InlineKeyboardMarkup(inline_buttons), disable_web_page_preview=True)
 
 async def send_about_text(client, message):
-    inline_buttons = [[
-        InlineKeyboardButton('• ᴄʟᴏsᴇ •', callback_data='close_data')
-    ]]
-    await message.reply_text(
-        text=script.ABOUT_TXT.format(temp.B_NAME, temp.B_LINK),
-        reply_markup=InlineKeyboardMarkup(inline_buttons),
-        disable_web_page_preview=True
-    )
+    inline_buttons = [[InlineKeyboardButton('• ᴄʟᴏsᴇ •', callback_data='close_data')]]
+    await message.reply_text(text=script.ABOUT_TXT.format(temp.B_NAME, temp.B_LINK), reply_markup=InlineKeyboardMarkup(inline_buttons), disable_web_page_preview=True)
 
 # =========================================================
 # 🔙 CALLBACK QUERY HANDLER
@@ -203,17 +193,13 @@ async def send_about_text(client, message):
 @Client.on_callback_query()
 async def cb_handler(client: Client, query: CallbackQuery):
     data = query.data
-
     if data == "close_data":
         await query.message.delete()
-
     elif data == "get":
-        buttons = [
-            [InlineKeyboardButton('• 𝖢𝗅𝗈𝗌𝖾 •', callback_data='close_data')]
-        ]
+        buttons = [[InlineKeyboardButton('• 𝖢𝗅𝗈𝑠𝖾 •', callback_data='close_data')]]
         await query.message.reply_photo(
             photo=QR_CODE_IMAGE,
             caption=script.SEENBUY_TXT.format(DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID),
             reply_markup=InlineKeyboardMarkup(buttons),
             parse_mode=enums.ParseMode.HTML
-        )
+    )
