@@ -103,7 +103,7 @@ async def start_command(client, message: Message):
         except Exception:
             pass
 
-    # ⌨️ BUTTON NAME SET TO "Get Photo"
+    # ⌨️ REPLY KEYBOARD (Niche keyboard me dikhega)
     reply_keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton("Get Video"), KeyboardButton("Get Photo")],
@@ -114,13 +114,28 @@ async def start_command(client, message: Message):
         one_time_keyboard=False
     )
 
+    # 🔗 INLINE KEYBOARD (Aapke personal link ke sath buttons)
+    inline_keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("Update Channel 📢", url="https://t.me/ERBotsUpdate"),
+            InlineKeyboardButton("Buy Source Code 💰", url="@EvaRoseX")
+        ]
+    ])
+
     random_pic = random.choice(START_PICS_LIST)
 
+    # Main welcome photo send ho rahi hai
     await message.reply_photo(
         photo=random_pic,
         caption=script.START_TXT.format(mention, temp.U_NAME, temp.U_NAME),
         reply_markup=reply_keyboard,
         has_spoiler=True
+    )
+    
+    # Buttons ko chat me thik niche chipkane ke liye text message bheja
+    await message.reply_text(
+        text="👇 <b>Quick Links:</b>",
+        reply_markup=inline_keyboard
     )
 
 # =================================================
@@ -131,25 +146,20 @@ async def send_photo_from_channel(client, message: Message):
     processing_msg = await message.reply("🔄 <b>Aapke bhandar se photo nikal raha hoon...</b>")
     
     try:
-        # get_chat se channel details nikalenge bina error ke
         chat_details = await client.get_chat(MY_PHOTO_CHANNEL)
         latest_id = chat_details.pinned_message.id if chat_details.pinned_message else 1500
             
         if not latest_id or latest_id < 2:
             latest_id = 700 
             
-        # 60 baar loop chalega taaki correct photo milne ke chance maximum ho jayein
         for _ in range(60): 
             random_msg_id = random.randint(1, latest_id)
             try:
-                # Message data fetch karenge pehle check karne ke liye
                 target_msg = await client.get_messages(MY_PHOTO_CHANNEL, random_msg_id)
                 
-                # Agar message valid nahi hai ya usme photo media nahi hai, to skip karke doosra try karo
                 if not target_msg or not target_msg.photo:
                     continue
                 
-                # Agar photo mil gayi, tabhi use user ko copy karenge
                 await client.copy_message(
                     chat_id=message.chat.id,
                     from_chat_id=MY_PHOTO_CHANNEL,
