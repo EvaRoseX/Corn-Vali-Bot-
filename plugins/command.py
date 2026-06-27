@@ -124,25 +124,27 @@ async def start_command(client, message: Message):
     )
 
 # =================================================
-# 🖼️ GET PHOTO HANDLER (100% DIRECT BACKEND VALUE)
+# 🖼️ GET PHOTO HANDLER (UPDATED NO-ERROR METHOD)
 # =================================================
 @Client.on_message((filters.regex(r"^Get Photo$") | filters.command("photo")) & filters.private)
 async def send_photo_from_channel(client, message: Message):
     processing_msg = await message.reply("🔄 <b>Aapke bhandar se photo nikal raha hoon...</b>")
     
     try:
-        # Channel ka sabsse latest message ID automatic nikalenge
-        async for last_msg in client.get_chat_history(MY_PHOTO_CHANNEL, limit=1):
-            latest_id = last_msg.id
+        # get_chat se chat details fetch karenge (bina history read kiye)
+        chat_details = await client.get_chat(MY_PHOTO_CHANNEL)
+        
+        # Agar channel par koi pinned message hai to uski ID ko latest maanenge, nahi to default 1500 le lenge
+        latest_id = chat_details.pinned_message.id if chat_details.pinned_message else 1500
             
         if not latest_id or latest_id < 2:
             latest_id = 700 
             
-        # 40 baar loop taaki khali ids skip ho jayein aur text content na send ho
+        # 40 baar loop taaki khali ya invalid IDs skip ho jayein
         for _ in range(40): 
             random_msg_id = random.randint(1, latest_id)
             try:
-                # Direct message ko copy karega bina kisi tag ke user ki chat me
+                # Direct message ko copy karega user ki private chat me
                 await client.copy_message(
                     chat_id=message.chat.id,
                     from_chat_id=MY_PHOTO_CHANNEL,
@@ -202,4 +204,4 @@ async def cb_handler(client: Client, query: CallbackQuery):
             caption=script.SEENBUY_TXT.format(DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID),
             reply_markup=InlineKeyboardMarkup(buttons),
             parse_mode=enums.ParseMode.HTML
-        )
+    )
