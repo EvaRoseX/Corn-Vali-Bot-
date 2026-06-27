@@ -97,10 +97,10 @@ async def start_command(client, message: Message):
         except Exception:
             pass
 
-    # ⌨️ KEYBOARD LAYOUT WITH /photo COMMAND
+    # ⌨️ FIXED: Button ka naam wapas "Get Photo" kar diya hai!
     reply_keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton("Get Video"), KeyboardButton("/photo")],
+            [KeyboardButton("Get Video"), KeyboardButton("Get Photo")],
             [KeyboardButton("Brazzers")],
             [KeyboardButton("My plan"), KeyboardButton("Subscription")]
         ],
@@ -118,9 +118,10 @@ async def start_command(client, message: Message):
     )
 
 # =================================================
-# 🖼️ GET PHOTO HANDLER (100% DYNAMIC FORWARD METHOD)
+# 🖼️ GET PHOTO HANDLER (NO FORWARD TAG - DIRECT SEND)
 # =================================================
-@Client.on_message(filters.command("photo") & filters.private)
+# Ab ye text aur command dono ko automatic pakad lega!
+@Client.on_message((filters.regex(r"^Get Photo$") | filters.command("photo")) & filters.private)
 async def send_photo_from_channel(client, message: Message):
     if not PHOTO_CHANNEL:
         return await message.reply("⚠️ <b>Photo Channel configuration missing hai!</b>")
@@ -128,38 +129,37 @@ async def send_photo_from_channel(client, message: Message):
     processing_msg = await message.reply("🔄 <b>Photo fetch kar raha hoon...</b>")
     
     try:
-        # 🔥 DYNAMIC SYSTEM: Channel ka sabse latest message fetch karke uski ID nikalega
+        # Channel ka sabse latest message ID nikalenge
         async for last_msg in client.get_chat_history(PHOTO_CHANNEL, limit=1):
             latest_id = last_msg.id
             
-        # Agar channel khali lag raha hai toh safe backup lagayenge
         if not latest_id or latest_id < 2:
             latest_id = 100
             
-        # 1 se lekar jo bhi latest post ID hai, uske beech me se random message select karega
-        random_msg_id = random.randint(1, latest_id)
-        
-        # Direct message forward karega
-        await client.forward_messages(
-            chat_id=message.chat.id,
-            from_chat_id=PHOTO_CHANNEL,
-            message_ids=random_msg_id
-        )
-        await processing_msg.delete()
+        # Random message check karne ke liye loop lagayenge taaki khali text post na send ho
+        for _ in range(10):
+            random_msg_id = random.randint(1, latest_id)
+            try:
+                # Channel se woh specific message copy karenge
+                channel_msg = await client.get_messages(PHOTO_CHANNEL, random_msg_id)
+                
+                # Agar us message me sach me photo hai, toh hi bhejenge
+                if channel_msg and channel_msg.photo:
+                    await message.reply_photo(
+                        photo=channel_msg.photo.file_id,
+                        caption="<b>Here is your requested photo! ✨\n\nClick 'Get Photo' again for more!</b>"
+                    )
+                    await processing_msg.delete()
+                    return # Kaam ho gaya, function se bahar!
+            except Exception:
+                continue # Agar wo message ID deleted thi toh agla loop automatic chalega
+                
+        # Safe fallback agar random loop me photo na mile
+        await processing_msg.edit("⚠️ <b>Is baar koi valid photo nahi mili, kripya dobara click karein!</b>")
         
     except Exception as e:
-        print(f"Forward Error: {e}")
-        try:
-            # Backup automatically handles case if chosen ID was deleted text or service message
-            backup_msg_id = random.randint(1, latest_id if 'latest_id' in locals() else 100)
-            await client.forward_messages(
-                chat_id=message.chat.id,
-                from_chat_id=PHOTO_CHANNEL,
-                message_ids=backup_msg_id
-            )
-            await processing_msg.delete()
-        except Exception:
-            await processing_msg.edit("⚠️ <b>Koshish nakam rahi!</b> Ek baar fir se click karein ya check karein ki bot channel me Admin hai.")
+        print(f"Photo Fetch Error: {e}")
+        await processing_msg.edit("⚠️ <b>Koshish nakam rahi!</b> Check karein ki bot channel me Admin hai.")
 
 # =================================================
 # 📜 HELPER HANDLERS
