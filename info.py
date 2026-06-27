@@ -38,7 +38,8 @@ VERIFIED_LOG = int(environ.get("VERIFIED_LOG", "-1004214402860"))
 POST_CHANNEL = int(environ.get("POST_CHANNEL", "-1002707776700"))
 VIDEO_CHANNEL = int(environ.get("VIDEO_CHANNEL", "-1004408020486"))
 BRAZZER_CHANNEL = int(environ.get("BRAZZER_CHANNEL", "-1004491495280"))
-PHOTO_CHANNEL = int(get_env("PHOTO_CHANNEL", "-1004493848925")) 
+# info.py ki line 41 ko isse replace kar dein:
+PHOTO_CHANNEL = int(os.environ.get("PHOTO_CHANNEL", "-1004493848925")) 
 
 
 # Auth channels list
