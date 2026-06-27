@@ -6,8 +6,7 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from pyrogram.errors import FloodWait, UserIsBlocked, PeerIdInvalid, MediaEmpty
 from Script import script
 from database.users_db import db
-# 🛠️ INFO se PHOTO_CHANNEL aur TOTAL_CHANNEL_POSTS ko yahan import kiya hai
-from info import LOG_CHANNEL, PREMIUM_LOGS, FSUB, QR_CODE_IMAGE, DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID, PHOTO_CHANNEL, TOTAL_CHANNEL_POSTS
+from info import LOG_CHANNEL, PREMIUM_LOGS, FSUB, QR_CODE_IMAGE, DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID, PHOTO_CHANNEL
 from utils import temp, is_user_joined
 from plugins.verification import verify_user_on_start
 from plugins.send_file import send_requested_file
@@ -24,12 +23,6 @@ START_PICS_LIST = [
     "https://i.ibb.co/zHXf41Zs/photo-2026-06-26-12-05-30-7655674304838762512.jpg",
     "https://i.ibb.co/HfDpcqqk/photo-2026-06-26-12-05-33-7655674326313598980.jpg"
 ]
-
-# Safe-check: Agar TOTAL_CHANNEL_POSTS info.py me nahi define kiya hai toh ye crash nahi hone dega
-try:
-    max_posts = int(TOTAL_CHANNEL_POSTS)
-except Exception:
-    max_posts = 700  # Default backup value
 
 # =================================================
 # 🚀 START COMMAND (ZERO-ERROR SYSTEM)
@@ -125,7 +118,7 @@ async def start_command(client, message: Message):
     )
 
 # =================================================
-# 🖼️ GET PHOTO HANDLER (SUPER-FAST FORWARD METHOD)
+# 🖼️ GET PHOTO HANDLER (100% DYNAMIC FORWARD METHOD)
 # =================================================
 @Client.on_message(filters.command("photo") & filters.private)
 async def send_photo_from_channel(client, message: Message):
@@ -134,11 +127,19 @@ async def send_photo_from_channel(client, message: Message):
         
     processing_msg = await message.reply("🔄 <b>Photo fetch kar raha hoon...</b>")
     
-    # 1 se lekar max_posts tak koi bhi ek random message ID chunega
-    random_msg_id = random.randint(1, max_posts)
-    
     try:
-        # Direct info.py wale PHOTO_CHANNEL se message forward karega
+        # 🔥 DYNAMIC SYSTEM: Channel ka sabse latest message fetch karke uski ID nikalega
+        async for last_msg in client.get_chat_history(PHOTO_CHANNEL, limit=1):
+            latest_id = last_msg.id
+            
+        # Agar channel khali lag raha hai toh safe backup lagayenge
+        if not latest_id or latest_id < 2:
+            latest_id = 100
+            
+        # 1 se lekar jo bhi latest post ID hai, uske beech me se random message select karega
+        random_msg_id = random.randint(1, latest_id)
+        
+        # Direct message forward karega
         await client.forward_messages(
             chat_id=message.chat.id,
             from_chat_id=PHOTO_CHANNEL,
@@ -149,8 +150,8 @@ async def send_photo_from_channel(client, message: Message):
     except Exception as e:
         print(f"Forward Error: {e}")
         try:
-            # Backup ID try karega agar pehli ID khali nikli toh
-            backup_msg_id = random.randint(1, max_posts)
+            # Backup automatically handles case if chosen ID was deleted text or service message
+            backup_msg_id = random.randint(1, latest_id if 'latest_id' in locals() else 100)
             await client.forward_messages(
                 chat_id=message.chat.id,
                 from_chat_id=PHOTO_CHANNEL,
@@ -202,4 +203,4 @@ async def cb_handler(client: Client, query: CallbackQuery):
             caption=script.SEENBUY_TXT.format(DAILY_LIMIT, PREMIUM_DAILY_LIMIT, UPI_ID),
             reply_markup=InlineKeyboardMarkup(buttons),
             parse_mode=enums.ParseMode.HTML
-    )
+        )
